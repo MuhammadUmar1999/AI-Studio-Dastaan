@@ -1,0 +1,162 @@
+@import 'tailwindcss';
+@import 'tw-animate-css';
+@import 'shadcn/tailwind.css';
+
+@theme inline {
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-italiana), 'Times New Roman', serif;
+  --font-heading: var(--font-cormorant), Georgia, serif;
+  --font-wordmark: var(--font-bodoni), Georgia, serif;
+
+  --color-bg: var(--bg);
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-tile: var(--tile);
+  --color-tile-end: var(--tile-end);
+  --color-cream: var(--cream);
+  --color-hairline: var(--hairline);
+  --color-hero-blue: var(--hero-blue);
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  --radius-sm: 1px;
+  --radius-md: 2px;
+  --radius-lg: 2px;
+  --radius-xl: 2px;
+  --radius-2xl: 2px;
+  --radius-3xl: 2px;
+  --radius-4xl: 2px;
+
+  --ease-luxe: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+:root {
+  color-scheme: light;
+
+  --bg: #ffffff;
+  --ink: #0e0e0e;
+  --muted: #6b6b6b;
+  --tile: #efe6d6;
+  --tile-end: #f4ebdd;
+  --cream: #f7efdd;
+  --hairline: #e6e1d8;
+  --hero-blue: #7fb2d9;
+  --tile-warm: #f3e6cc;
+  --tile-petal: #d97d3b;
+  --tile-stem: #f1d1b3;
+  --tile-soft: #f4eadf;
+  --tile-green: #e9eddf;
+  --tile-neutral: #eee7dd;
+  --tile-gold: #ede2c9;
+  --tile-stone: #e9e2d9;
+  --tile-sand: #e7e0d5;
+  --tile-sage: #e7eadb;
+  --tile-blush: #e6ded2;
+  --tile-amber: #efe1cd;
+
+  --background: #ffffff;
+  --foreground: #0e0e0e;
+  --card: #ffffff;
+  --card-foreground: #0e0e0e;
+  --popover: #ffffff;
+  --popover-foreground: #0e0e0e;
+  --primary: #0e0e0e;
+  --primary-foreground: #ffffff;
+  --secondary: #ffffff;
+  --secondary-foreground: #0e0e0e;
+  --muted-foreground: #6b6b6b;
+  --accent: #f7efdd;
+  --accent-foreground: #0e0e0e;
+  --destructive: #b3261e;
+  --border: #e6e1d8;
+  --input: #e6e1d8;
+  --ring: #0e0e0e;
+  --radius: 2px;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  html {
+    scroll-behavior: smooth;
+  }
+  body {
+    @apply bg-bg font-sans text-ink antialiased;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+  }
+}
+
+@keyframes hero-progress {
+  from {
+    transform: scaleX(0) translateY(-1px);
+  }
+  to {
+    transform: scaleX(1) translateY(-1px);
+  }
+}
+
+.hero-progress {
+  animation-name: hero-progress;
+  animation-timing-function: linear;
+  animation-fill-mode: forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  .hero-progress {
+    animation: none;
+    transform: none;
+  }
+}
+
+@utility label-caps {
+  font-family: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  font-size: 11px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+}
+
+@utility link-underline {
+  display: inline-block;
+  font-family: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  font-size: 11px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  text-decoration-line: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 4px;
+  transition: opacity 180ms var(--ease-luxe);
+}
+
+.link-underline:hover {
+  opacity: 0.6;
+}
