@@ -4,14 +4,16 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
-import { ShoppingBag, Play, Heart, Bell } from 'lucide-react'
+import { ShoppingBag, Play, Heart, Bell, Minus, Plus } from 'lucide-react'
 import { toast } from 'sonner'
 import { z } from 'zod'
 import { useAppDispatch, useAppSelector } from '@/lib/hooks'
 import { addItem, toggle } from '@/lib/store'
+import { saveNotifyRequest } from '@/lib/account'
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion'
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
+import { Breadcrumbs } from '@/components/layout/breadcrumbs'
 import { formatPrice, type Product } from '@/data/products'
 import { getRelated } from '@/lib/catalog'
 
@@ -113,6 +115,9 @@ function Gallery({ product }: { product: Product }) {
           <DialogTitle className="sr-only">
             {product.name} image {active + 1} of {gallery.length}
           </DialogTitle>
+          <DialogDescription className="sr-only">
+            Enlarged view of {product.name} product photography. Use left and right arrow keys to navigate images.
+          </DialogDescription>
           <div className="relative aspect-[4/5] w-full">
             <Image
               src={gallery[active]}
@@ -151,7 +156,7 @@ function Details({ product }: { product: Product }) {
   const router = useRouter()
   const volumes = product.volumes.length > 0 ? product.volumes : fallbackVolumes
   const [volume, setVolume] = useState(volumes[0])
-  const [qty] = useState(1)
+  const [qty, setQty] = useState(1)
   const [notifyOpen, setNotifyOpen] = useState(false)
   const [notifyEmail, setNotifyEmail] = useState('')
   const [notifyError, setNotifyError] = useState('')
@@ -159,7 +164,7 @@ function Details({ product }: { product: Product }) {
   const wishlist = useAppSelector((state) => state.wishlist.ids)
   const isWishlisted = wishlist.includes(product.id)
 
-  const addToBag = () => {
+  const addSelectedToCart = (openDrawer: boolean) => {
     if (!product.inStock) return
     const item = {
       productId: product.id,
@@ -171,21 +176,20 @@ function Details({ product }: { product: Product }) {
       image: product.images[0],
     }
     dispatch(addItem(item))
-    try {
-      const stored = JSON.parse(localStorage.getItem('dastaan-cart') || '{"items":[]}')
-      const items = Array.isArray(stored.items) ? stored.items : []
-      const existing = items.find(
-        (entry: typeof item) =>
-          entry.productId === item.productId && entry.volumeLabel === item.volumeLabel
-      )
-      if (existing) existing.qty += item.qty
-      else items.push(item)
-      localStorage.setItem('dastaan-cart', JSON.stringify({ items }))
-    } catch {
-      localStorage.setItem('dastaan-cart', JSON.stringify({ items: [item] }))
+    if (openDrawer) {
+      window.dispatchEvent(new CustomEvent('dastaan:open-cart'))
+      toast.success(`${product.name} (${volume.label} × ${qty}) added to your bag.`)
     }
-    window.dispatchEvent(new CustomEvent('dastaan:open-cart'))
-    toast.success(`${product.name} added to your bag.`)
+  }
+
+  const addToBag = () => {
+    addSelectedToCart(true)
+  }
+
+  const handleBuyNow = () => {
+    if (!product.inStock) return
+    addSelectedToCart(false)
+    router.push('/checkout')
   }
 
   const toggleWishlist = () => {
@@ -204,6 +208,12 @@ function Details({ product }: { product: Product }) {
       setNotifyError(parsed.error.issues[0]?.message ?? 'Please enter a valid email address.')
       return
     }
+    saveNotifyRequest({
+      email: parsed.data.email.toLowerCase(),
+      productId: product.id,
+      productSlug: product.slug,
+      createdAt: new Date().toISOString(),
+    })
     setNotifyError('')
     setNotifyOpen(false)
     setNotifyEmail('')
@@ -247,21 +257,51 @@ function Details({ product }: { product: Product }) {
         {product.description[0] ??
           'Step into the world of Dastaan, where each bottle unveils a tale of bold elegance and understated strength designed for those who command presence without a word.'}
       </p>
-      <div className="mt-7 border-t border-hairline pt-5">
-        <p className="label-caps text-ink/55">Volume:</p>
-        <div className="mt-3 flex gap-5 text-sm">
-          {volumes.map((item) => (
-            <button
-              type="button"
-              key={item.label}
-              onClick={() => setVolume(item)}
-              aria-pressed={volume.label === item.label}
-              className={`min-h-11 px-1 ${volume.label === item.label ? 'underline underline-offset-4' : 'text-ink/50'}`}
-            >
-              {item.label}
-            </button>
-          ))}
+      <div className="mt-7 flex flex-wrap items-end justify-between gap-6 border-t border-hairline pt-5">
+        <div>
+          <p className="label-caps text-ink/55">Volume:</p>
+          <div className="mt-3 flex gap-5 text-sm">
+            {volumes.map((item) => (
+              <button
+                type="button"
+                key={item.label}
+                onClick={() => setVolume(item)}
+                aria-pressed={volume.label === item.label}
+                className={`min-h-11 px-1 ${volume.label === item.label ? 'underline underline-offset-4' : 'text-ink/50'}`}
+              >
+                {item.label}
+              </button>
+            ))}
+          </div>
         </div>
+        {product.inStock && (
+          <div>
+            <p className="label-caps text-ink/55">Quantity:</p>
+            <div className="mt-3 flex items-center border border-hairline">
+              <button
+                type="button"
+                aria-label="Decrease quantity"
+                disabled={qty <= 1}
+                onClick={() => setQty((prev) => Math.max(1, prev - 1))}
+                className="flex size-9 items-center justify-center text-ink disabled:opacity-35"
+              >
+                <Minus className="size-3.5" />
+              </button>
+              <span className="w-8 text-center text-xs" aria-live="polite">
+                {qty}
+              </span>
+              <button
+                type="button"
+                aria-label="Increase quantity"
+                disabled={qty >= 10}
+                onClick={() => setQty((prev) => Math.min(10, prev + 1))}
+                className="flex size-9 items-center justify-center text-ink disabled:opacity-35"
+              >
+                <Plus className="size-3.5" />
+              </button>
+            </div>
+          </div>
+        )}
       </div>
       <div className="mt-8 flex flex-col gap-2">
         {product.inStock ? (
@@ -273,10 +313,7 @@ function Details({ product }: { product: Product }) {
               <ShoppingBag data-icon="inline-start" /> Add to bag
             </Button>
             <Button
-              onClick={() => {
-                addToBag()
-                router.push('/checkout')
-              }}
+              onClick={handleBuyNow}
               variant="outline"
               className="h-12 rounded-none border-hairline bg-transparent text-[11px] uppercase tracking-[0.14em] hover:bg-ink hover:text-white"
             >
@@ -350,7 +387,7 @@ function Details({ product }: { product: Product }) {
           </AccordionTrigger>
           <AccordionContent>
             <p className="pb-3 text-xs text-ink/65">
-              Complimentary delivery on all orders. Ships within 2–4 business days.
+              Complimentary standard delivery on orders of $150 or more. Ships within 3–5 business days.
             </p>
           </AccordionContent>
         </AccordionItem>
@@ -430,6 +467,12 @@ export function ProductDetails({ product }: { product: Product }) {
   return (
     <>
       <main className="mx-auto max-w-[1440px] px-3 pb-20 pt-6 sm:px-4 md:pt-10">
+        <Breadcrumbs
+          items={[
+            { label: 'Shop', href: '/shop' },
+            { label: product.name },
+          ]}
+        />
         <section
           id="acquire"
           className="scroll-mt-20 grid gap-10 md:grid-cols-[minmax(0,1.2fr)_minmax(280px,0.8fr)] md:gap-16 lg:gap-24"
@@ -441,7 +484,17 @@ export function ProductDetails({ product }: { product: Product }) {
       <div className="relative aspect-[16/7] overflow-hidden bg-tile-petal"><Image src="/images/ashes-petals.png" alt="Ashes of Moonlight surrounded by warm petals" fill className="object-cover" sizes="100vw" /></div>
       <section className="grid items-center gap-8 py-20 md:grid-cols-[2fr_1fr] md:gap-14 md:py-28"><div className="relative aspect-[4/3] overflow-hidden bg-tile-stem"><Image src="/images/ashes-stem.png" alt="Ashes of Moonlight with a delicate flower" fill className="object-cover" sizes="65vw" /></div><div className="max-w-sm"><h2 className="font-heading text-3xl font-normal leading-tight">Enhances the luxurious trail of Dastaan Parfum.</h2><p className="mt-5 text-sm leading-relaxed text-ink/60">Indulge in a delicate floral ritual with Parfs. Lightly misted onto your hair, it releases the luminous scent of the perfume with every graceful movement.</p><Link href="#acquire" className="link-underline mt-7">Acquire</Link></div></section>
       <section className="text-center"><h2 className="font-heading text-3xl font-normal">Echo Your Love</h2><p className="mx-auto mt-3 max-w-sm text-xs leading-relaxed text-ink/55">Radiates confidence and sensuality, capturing the bold, romantic spirit of the new Dastaan perfume.</p><button type="button" className="group relative mt-8 block aspect-[16/8] w-full overflow-hidden text-left" onClick={() => setVideoOpen(true)} aria-label="Play Echo Your Love film"><Image src="/images/ashes-rose.png" alt="Coral rose in perfume liquid" fill className="object-cover transition-transform duration-700 group-hover:scale-[1.02]" sizes="100vw" /><span className="absolute bottom-4 right-4 flex size-10 items-center justify-center rounded-full bg-white/65 text-ink backdrop-blur-sm"><Play className="ml-0.5 size-4 fill-current" /></span></button></section>
-      <Dialog open={videoOpen} onOpenChange={setVideoOpen}><DialogContent className="max-w-4xl border-0 bg-black p-0"><DialogTitle className="sr-only">Echo Your Love campaign still</DialogTitle><div className="relative aspect-video"><Image src="/images/ashes-rose.png" alt="Echo Your Love campaign still" fill className="object-cover" sizes="90vw" /></div></DialogContent></Dialog>
+      <Dialog open={videoOpen} onOpenChange={setVideoOpen}>
+        <DialogContent className="max-w-4xl border-0 bg-black p-0">
+          <DialogTitle className="sr-only">Echo Your Love campaign still</DialogTitle>
+          <DialogDescription className="sr-only">
+            Campaign film still for {product.name} — Echo Your Love by Dastaan.
+          </DialogDescription>
+          <div className="relative aspect-video">
+            <Image src="/images/ashes-rose.png" alt="Echo Your Love campaign still" fill className="object-cover" sizes="90vw" />
+          </div>
+        </DialogContent>
+      </Dialog>
       <section className="py-24 md:py-36"><h2 className="text-center font-heading text-3xl font-normal">You may also like</h2><div className="mt-10 grid grid-cols-1 gap-5 sm:grid-cols-3">{related.map((item) => <Link href={`/product/${item.slug}`} key={item.slug} className="group text-center"><div className="relative aspect-square overflow-hidden" style={{ backgroundColor: item.tileBg }}><Image src={item.images[0]} alt={item.name} fill className="object-cover transition-transform duration-700 group-hover:scale-[1.04]" sizes="33vw" /></div><h3 className="mt-4 font-heading text-xl">{item.name}</h3><p className="mt-1 text-xs text-ink/60">{formatPrice(item.price)}</p></Link>)}</div></section>
     </main>
   </>

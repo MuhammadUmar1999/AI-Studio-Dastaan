@@ -7,6 +7,7 @@ import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTr
 import { mainNav } from '@/data/navigation'
 import { useAppSelector } from '@/lib/hooks'
 import { selectCartCount } from '@/lib/store'
+import { getAuthSession } from '@/lib/account'
 import { cn } from '@/lib/utils'
 import { CartDrawer } from '@/components/cart/cart-drawer'
 import { SearchDialog } from './search-dialog'
@@ -19,6 +20,7 @@ export function SiteHeader() {
   const [menuOpen, setMenuOpen] = useState(false)
   const [cartOpen, setCartOpen] = useState(false)
   const [searchOpen, setSearchOpen] = useState(false)
+  const [signedIn, setSignedIn] = useState(false)
 
   useEffect(() => {
     setMenuOpen(false)
@@ -33,6 +35,20 @@ export function SiteHeader() {
   const count = useAppSelector(selectCartCount)
   const wishlistCount = useAppSelector((state) => state.wishlist.ids.length)
   const hydrated = useAppSelector((state) => state.ui.hydrated)
+
+  useEffect(() => {
+    if (!hydrated) return
+    const syncAuth = () => {
+      setSignedIn(Boolean(getAuthSession()))
+    }
+    syncAuth()
+    window.addEventListener('dastaan:auth-updated', syncAuth)
+    window.addEventListener('storage', syncAuth)
+    return () => {
+      window.removeEventListener('dastaan:auth-updated', syncAuth)
+      window.removeEventListener('storage', syncAuth)
+    }
+  }, [hydrated])
 
   return (
     <>
@@ -115,8 +131,18 @@ export function SiteHeader() {
                 </span>
               )}
             </button>
-            <Link href="/account" className={iconButton} aria-label="Account">
+            <Link
+              href="/account"
+              className={`${iconButton} relative`}
+              aria-label={hydrated && signedIn ? 'Account (Signed in)' : 'Account'}
+            >
               <User className="size-[18px]" strokeWidth={1.5} />
+              {hydrated && signedIn && (
+                <span
+                  aria-hidden="true"
+                  className="absolute right-1.5 top-1.5 size-1.5 rounded-full bg-ink"
+                />
+              )}
             </Link>
           </div>
         </div>

@@ -34,19 +34,6 @@ export function ProductTile({
       image: product.images[0],
     }
     dispatch(addItem(item))
-    try {
-      const stored = JSON.parse(localStorage.getItem('dastaan-cart') || '{"items":[]}')
-      const items = Array.isArray(stored.items) ? stored.items : []
-      const existing = items.find(
-        (entry: typeof item) =>
-          entry.productId === item.productId && entry.volumeLabel === item.volumeLabel
-      )
-      if (existing) existing.qty += 1
-      else items.push(item)
-      localStorage.setItem('dastaan-cart', JSON.stringify({ items }))
-    } catch {
-      localStorage.setItem('dastaan-cart', JSON.stringify({ items: [item] }))
-    }
     window.dispatchEvent(new CustomEvent('dastaan:open-cart'))
     toast.success(`${product.name} (${firstVolume.label}) added to your bag.`)
   }

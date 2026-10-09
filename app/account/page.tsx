@@ -1,30 +1,31 @@
 import type { Metadata } from 'next'
-import Link from 'next/link'
-import { PageHero } from '@/components/layout/page-hero'
+import { Suspense } from 'react'
+import { AccountClient } from '@/components/account/account-client'
 
 export const metadata: Metadata = {
   title: 'Account | Dastaan',
   description: 'Manage your Dastaan profile, saved addresses, orders, and fragrance wishlist.',
 }
 
-export default function AccountPage() {
+export default async function AccountPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ tab?: string; redirect?: string }>
+}) {
+  const { tab, redirect } = await searchParams
+
   return (
     <main>
-      <PageHero
-        breadcrumbs={[{ label: 'Account' }]}
-        eyebrow="Account"
-        title="Your Dastaan account"
-        subtitle="Account access is coming soon. Browse the collection while we prepare your private space."
+      <Suspense
+        fallback={
+          <div className="mx-auto max-w-[1440px] px-3 py-16 sm:px-4">
+            <div className="mx-auto h-96 max-w-4xl animate-pulse bg-tile/60" />
+          </div>
+        }
       >
-        <div className="flex flex-wrap gap-6">
-          <Link href="/shop" className="link-underline">
-            Explore the collection
-          </Link>
-          <Link href="/" className="link-underline">
-            Return home
-          </Link>
-        </div>
-      </PageHero>
+        <AccountClient initialTab={tab} initialRedirect={redirect} />
+      </Suspense>
     </main>
   )
 }
+

@@ -98,7 +98,7 @@
     scroll-behavior: smooth;
   }
   body {
-    @apply bg-bg font-sans text-ink antialiased;
+    @apply overflow-x-clip bg-bg font-sans text-ink antialiased;
   }
   @media (prefers-reduced-motion: reduce) {
     html {

@@ -142,12 +142,13 @@ export function PopularPerfumes() {
                     />
                     <button
                       type="button"
+                      aria-pressed={wishlist.includes(product.id)}
                       aria-label={`${wishlist.includes(product.id) ? 'Remove' : 'Add'} ${product.name} ${wishlist.includes(product.id) ? 'from' : 'to'} wishlist`}
                       onClick={(event) => {
                         event.preventDefault()
                         dispatch(toggle(product.id))
                       }}
-                      className="absolute right-3 top-3 flex size-8 items-center justify-center rounded-full bg-white/80 opacity-0 transition-opacity group-hover:opacity-100 max-md:opacity-100"
+                      className="absolute right-3 top-3 flex size-8 items-center justify-center rounded-full bg-white/80 opacity-0 transition-opacity group-hover:opacity-100 focus-visible:opacity-100 focus-visible:outline focus-visible:outline-1 focus-visible:outline-offset-2 focus-visible:outline-ink max-md:opacity-100"
                     >
                       <Heart
                         className={`size-3.5 ${wishlist.includes(product.id) ? 'fill-ink' : ''}`}
